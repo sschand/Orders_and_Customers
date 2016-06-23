@@ -1,0 +1,32 @@
+.div_border{
+    border: 1px solid black;
+    padding: 5%;
+}
+.right{
+    float: right;
+}
+.main{
+    margin-bottom:  2em;
+}
+.off_left{
+    margin-left: 5%;
+}
+.orca_list{
+    padding: .5em;
+}
+
+.green{
+    background-color: #abdace !important;
+    border-color: #abdace !important;
+}
+.red{
+    background-color: #daabab !important;
+    border-color: #daabab !important;
+}
+.orcas{
+    padding: 30px;
+    height:15em;
+    overflow:scroll;
+    overflow-x:hidden;
+    /*overflow-y:hidden;*/
+}

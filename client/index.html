@@ -1,0 +1,199 @@
+<html ng-app="myApp">
+<head>
+    <title>Orders | Store</title>
+    <!-- require angular -->
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.9/angular.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.3.5/angular-route.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.5.7/angular-messages.js"></script>
+    <script src="//momentjs.com/downloads/moment.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.4.0/angular-messages.js"></script>
+
+    <link rel="stylesheet" href="/static/skeleton.css">
+    <link rel="stylesheet" href="/static/style.css">
+    <script type="text/javascript">
+
+        moment().format();
+        var myApp = angular.module('myApp', ['ngRoute', 'ngMessages']);
+
+        myApp.config(function($routeProvider) {
+            $routeProvider
+            .when('/', {
+                templateUrl: 'static/partials/orders.html'
+            })
+            .when('/orders', {
+                templateUrl: 'static/partials/orders.html'
+            })
+            .when('/customers', {
+                templateUrl: 'static/partials/customers.html'
+            })
+        })
+
+        /************** FACTORIES ***************/
+        // Customer Factory
+        myApp.factory('CustomerFactory', function($http) {
+
+            var factory = {};
+            var customers = [];
+            var customerExists = '';
+
+            // Get all the customers
+            factory.index = function(callback) {
+                $http.get('/getCustomers').success(function(data){
+                    customers = data.Customers;
+
+                    callback(customers);
+                });
+            }
+
+            // Add person
+            factory.create = function(info, callback) {
+                $http.post('/new/'+info).success(function (data){
+                    if (typeof data == 'object') {
+                        customerExists = data;
+                    }else{
+                        customerExists = '';
+                    }
+                    callback(customers, customerExists);
+                });
+            }
+
+            // delete customers
+            factory.delete = function(customer, callback) {
+                $http.delete('/remove/'+customer._id).success(function(data) {
+                    callback(customers);
+                });
+            }
+            return factory;
+        });
+
+        // Orders factory
+        myApp.factory('OrderFactory', function($http) {
+            var factory = {};
+            var orders = [];
+
+            // Get orders
+            factory.index = function(callback) {
+                $http.get('/getOrders').success(function(data) {
+                    orders = data.Orders;
+                    callback(orders);
+                });
+            };
+
+            // Add order
+            factory.create = function(info, callback) {
+                $http.post('/newOrder', info).success(function() {
+                    callback(orders);
+                });
+            };
+
+            return factory;
+        });
+
+        // Product Factory
+        myApp.factory('ProductFactory', function($http) {
+            var factory = {};
+            var products = [];
+
+            factory.index = function(callback) {
+                $http.get('/getProducts').success(function(data) {
+                    products = data.Products;
+                    callback(products);
+                });
+
+            }
+
+            return factory;
+        });
+
+
+        /************** CONTROLLER(S) ***************/
+        // Customers Controller
+         myApp.controller('CustomersController', function($scope, CustomerFactory) {
+            $scope.customers = [];
+
+            // On page load, get all customers and put into scope
+            CustomerFactory.index(function(data, customerExists) {
+                $scope.customers = data;
+                $scope.customerExists = customerExists;
+            });
+
+            $scope.toDay = function(date) {
+                return moment(date).format("MMMM Do YYYY")
+            };
+            // Add person
+            $scope.addCustomer = function(){
+                CustomerFactory.create($scope.newCustomer, function (data, customerExists){
+                    $scope.newCustomer = "";
+
+                    CustomerFactory.index(function(data) {
+                        if(!customerExists){
+                            $scope.customers = data;
+                        }
+                        $scope.customerExists = customerExists;
+
+                    });
+                });
+            }
+            //
+            // Delete customer
+            $scope.delete = function(customer){
+                CustomerFactory.delete(customer, function(){
+                    // After delete is done, just update the view by refreshing the scope data
+                    CustomerFactory.index(function(data) {
+                        $scope.customers = data;
+                        $scope.newOrder = {};
+                    });
+                })
+            }
+        });
+
+        // Orders Controller
+        myApp.controller('OrdersController', function($scope, CustomerFactory, OrderFactory, ProductFactory) {
+            $scope.orders = [];
+            $scope.customerList = [];
+            $scope.number = 20; //limit of orders
+
+            // Set orders to orders from db
+            OrderFactory.index(function(data) {
+                $scope.orders = data;
+            });
+
+            // Product populate
+            ProductFactory.index(function(data) {
+                $scope.products = data;
+            });
+
+            // For looping through quantity select
+            $scope.getNumber = function(num) {
+                return new Array(num);
+            }
+
+            CustomerFactory.index(function(data) {
+                $scope.customerList = data;
+            });
+
+            $scope.toDay = function(date) {
+                return moment(date).format("MMMM Do YYYY")
+            };
+
+            $scope.addOrder = function(){
+                OrderFactory.create($scope.newOrder, function(data) {
+                    OrderFactory.index(function(data) {
+                        $scope.orders = data;
+                    });
+                })
+            };
+        });
+
+
+    </script>
+</head>
+<body ng-app="myApp">
+    <div class="container">
+        <a href="#/orders">Orders</a>
+        <a href="#/customers">Customers</a>
+        <div ng-view="">
+        </div>
+    </div>
+</body>
+</html>
